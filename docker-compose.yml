@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  # --- BACKEND ---
+  backend:
+    build: ./backend
+    container_name: backend
+    ports:
+      - "8082:8082"
+    depends_on:
+      - mariadb
+    networks:
+      - monitoring
+
+  # --- FRONTEND ---
+  frontend:
+    build: ./frontend
+    container_name: reactjs-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - monitoring
+
+  # --- DATABASE ---
+  mariadb:
+    image: mariadb:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: lacasa
+    ports:
+      - "3306:3306"
+    networks:
+      - monitoring
+
+  # --- PROMETHEUS ---
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - monitoring
+    depends_on:
+      - backend
+
+  # --- GRAFANA ---
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3001:3000"
+    networks:
+      - monitoring
+    depends_on:
+      - prometheus
+
+networks:
+  monitoring:
+    driver: bridge
